@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,7 +37,31 @@
       border-radius: 8px;
     }
 
-    button {
+    .tip-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tip-button {
+      flex: 1;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      background: white;
+      color: black;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .tip-button.selected {
+      background: #e63946;
+      color: white;
+      border-color: #e63946;
+    }
+
+    #split-button {
       width: 100%;
       padding: 16px;
       font-size: 18px;
@@ -66,16 +91,37 @@
   <label for="people">Number of People</label>
   <input type="number" id="people" placeholder="e.g. 4">
 
-  <button onclick="splitBill()">Split Bill</button>
+  <label>Tip</label>
+
+  <div class="tip-buttons">
+    <button class="tip-button" onclick="selectTip(10, this)">10%</button>
+    <button class="tip-button" onclick="selectTip(15, this)">15%</button>
+    <button class="tip-button" onclick="selectTip(20, this)">20%</button>
+  </div>
+
+  <button id="split-button" onclick="splitBill()">Split Bill</button>
 
   <div id="result"></div>
 
   <script>
+    let tip = 0;
+
+    function selectTip(value, button) {
+      tip = value;
+
+      document.querySelectorAll(".tip-button").forEach(function(button) {
+        button.classList.remove("selected");
+      });
+
+      button.classList.add("selected");
+    }
+
     function splitBill() {
       const bill = document.getElementById("bill").value;
       const people = document.getElementById("people").value;
 
-      const eachPerson = bill / people;
+      const total = bill * (1 + tip / 100);
+      const eachPerson = total / people;
 
       document.getElementById("result").textContent =
         "Each person pays $" + eachPerson.toFixed(2);
@@ -84,3 +130,4 @@
 
 </body>
 </html>
+```
