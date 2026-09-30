@@ -1,5 +1,5 @@
-```html
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -21,13 +21,19 @@
       margin-bottom: 40px;
     }
 
+    h2 {
+      margin-top: 50px;
+      font-size: 24px;
+    }
+
     label {
       display: block;
       font-weight: bold;
       margin-bottom: 8px;
     }
 
-    input {
+    input[type="number"],
+    input[type="text"] {
       width: 100%;
       box-sizing: border-box;
       padding: 16px;
@@ -61,7 +67,12 @@
       border-color: #e63946;
     }
 
-    #split-button {
+    button {
+      cursor: pointer;
+    }
+
+    #split-button,
+    #add-item {
       width: 100%;
       padding: 16px;
       font-size: 18px;
@@ -70,28 +81,53 @@
       background: #e63946;
       border: none;
       border-radius: 8px;
-      cursor: pointer;
     }
 
-    #result {
+    #result,
+    #totals {
       margin-top: 32px;
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
     }
+
+    #message {
+      margin-top: 16px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .person {
+      margin: 8px 0;
+    }
+
+    .people-list {
+      margin-bottom: 24px;
+    }
+
+    .people-list label {
+      font-weight: normal;
+      display: block;
+      margin: 10px 0;
+      font-size: 18px;
+    }
+
+    .item {
+      padding: 12px 0;
+      border-bottom: 1px solid #ddd;
+    }
   </style>
+
 </head>
 
 <body>
 
   <h1>Bill Splitter</h1>
 
-  <label for="bill">Total Bill</label>
-  <input type="number" id="bill" placeholder="e.g. 100">
+<label for="bill">Total Bill</label> <input type="number" id="bill" placeholder="e.g. 100">
 
-  <label for="people">Number of People</label>
-  <input type="number" id="people" placeholder="e.g. 4">
+<label for="people">Number of People</label> <input type="number" id="people" placeholder="e.g. 4">
 
-  <label>Tip</label>
+<label>Tip</label>
 
   <div class="tip-buttons">
     <button class="tip-button" onclick="selectTip(10, this)">10%</button>
@@ -99,12 +135,30 @@
     <button class="tip-button" onclick="selectTip(20, this)">20%</button>
   </div>
 
-  <button id="split-button" onclick="splitBill()">Split Bill</button>
+<button id="split-button" onclick="splitBill()">Split Bill</button>
 
+  <div id="message"></div>
   <div id="result"></div>
+
+  <h2>Shared Items</h2>
+
+<label for="item-name">Item Name</label> <input type="text" id="item-name" placeholder="e.g. Soup">
+
+<label for="item-price">Price</label> <input type="number" id="item-price" placeholder="e.g. 12">
+
+<label>Shared By</label>
+
+  <div class="people-list" id="people-list"></div>
+
+<button id="add-item" onclick="addItem()">Add Item</button>
+
+  <div id="items"></div>
+
+  <div id="totals"></div>
 
   <script>
     let tip = 0;
+    let itemTotals = {};
 
     function selectTip(value, button) {
       tip = value;
@@ -117,17 +171,81 @@
     }
 
     function splitBill() {
-      const bill = document.getElementById("bill").value;
-      const people = document.getElementById("people").value;
+      const bill = Number(document.getElementById("bill").value);
+      const people = Number(document.getElementById("people").value);
+
+      document.getElementById("message").textContent = "";
+      document.getElementById("result").textContent = "";
+
+      if (!people || people < 1) {
+        document.getElementById("message").textContent =
+          "Please enter at least 1 person";
+        return;
+      }
 
       const total = bill * (1 + tip / 100);
       const eachPerson = total / people;
 
       document.getElementById("result").textContent =
         "Each person pays $" + eachPerson.toFixed(2);
+
+      createPeopleList(people);
+    }
+
+    function createPeopleList(number) {
+      const list = document.getElementById("people-list");
+      list.innerHTML = "";
+
+      itemTotals = {};
+
+      for (let i = 1; i <= number; i++) {
+        itemTotals[i] = 0;
+
+        list.innerHTML += `
+          <label>
+            <input type="checkbox" value="${i}">
+            Person ${i}
+          </label>
+        `;
+      }
+    }
+
+    function addItem() {
+      const name = document.getElementById("item-name").value;
+      const price = Number(document.getElementById("item-price").value);
+      const selectedPeople = document.querySelectorAll(
+        "#people-list input:checked"
+      );
+
+      const share = price / selectedPeople.length;
+
+      selectedPeople.forEach(function(person) {
+        itemTotals[person.value] += share;
+      });
+
+      document.getElementById("items").innerHTML += `
+        <div class="item">
+          ${name} — $${price.toFixed(2)}
+        </div>
+      `;
+
+      showTotals();
+    }
+
+    function showTotals() {
+      let output = "<h3>Each Person Owes</h3>";
+
+      for (let person in itemTotals) {
+        output += `
+          <div class="person">
+            Person ${person}: $${itemTotals[person].toFixed(2)}
+          </div>
+        `;
+      }
+
+      document.getElementById("totals").innerHTML = output;
     }
   </script>
 
 </body>
 </html>
-```
