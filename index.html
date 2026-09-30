@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bill Splitter</title>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -21,13 +19,19 @@
       margin-bottom: 40px;
     }
 
+    h2 {
+      margin-top: 50px;
+      font-size: 24px;
+    }
+
     label {
       display: block;
       font-weight: bold;
       margin-bottom: 8px;
     }
 
-    input {
+    input[type="number"],
+    input[type="text"] {
       width: 100%;
       box-sizing: border-box;
       padding: 16px;
@@ -61,7 +65,8 @@
       border-color: #e63946;
     }
 
-    #split-button {
+    #split-button,
+    #add-item {
       width: 100%;
       padding: 16px;
       font-size: 18px;
@@ -80,45 +85,95 @@
     }
 
     #message {
-      margin-top: 32px;
+      margin-top: 16px;
       font-size: 18px;
       font-weight: bold;
     }
-  </style>
 
+    .people-list {
+      margin-bottom: 24px;
+    }
+
+    .person-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      font-size: 18px;
+      font-weight: normal;
+    }
+
+    .person-checkbox input {
+      width: 20px;
+      height: 20px;
+      margin: 0;
+    }
+
+    .item {
+      padding: 12px 0;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #totals {
+      margin-top: 32px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .person-total {
+      margin: 8px 0;
+    }
+  </style>
 </head>
 
 <body>
-
   <h1>Bill Splitter</h1>
 
-<label for="bill">Total Bill</label> <input type="number" id="bill" placeholder="e.g. 60">
+  <label for="bill">Total Bill</label>
+  <input type="number" id="bill" placeholder="e.g. 60">
 
-<label for="people">Number of People</label> <input type="number" id="people" placeholder="e.g. 3">
+  <label for="people">Number of People</label>
+  <input type="number" id="people" placeholder="e.g. 3">
 
-<label>Tip</label>
-
+  <label>Tip</label>
   <div class="tip-buttons">
-    <button class="tip-button" onclick="selectTip(10, this)">10%</button>
-    <button class="tip-button" onclick="selectTip(15, this)">15%</button>
-    <button class="tip-button" onclick="selectTip(20, this)">20%</button>
+    <button type="button" class="tip-button" onclick="selectTip(10, this)">10%</button>
+    <button type="button" class="tip-button" onclick="selectTip(15, this)">15%</button>
+    <button type="button" class="tip-button" onclick="selectTip(20, this)">20%</button>
   </div>
 
-<button id="split-button" onclick="splitBill()">Split Bill</button>
+  <button type="button" id="split-button" onclick="splitBill()">Split Bill</button>
 
   <div id="message"></div>
   <div id="result"></div>
 
+  <section id="shared-items">
+    <h2>Shared Items</h2>
+
+    <label for="item-name">Item Name</label>
+    <input type="text" id="item-name" placeholder="e.g. Soup">
+
+    <label for="item-price">Price</label>
+    <input type="number" id="item-price" placeholder="e.g. 12">
+
+    <label>Shared By</label>
+    <div id="people-list" class="people-list"></div>
+
+    <button type="button" id="add-item" onclick="addItem()">Add Item</button>
+
+    <div id="items"></div>
+    <div id="totals"></div>
+  </section>
+
   <script>
     let tip = 0;
+    let personTotals = {};
 
     function selectTip(value, button) {
       tip = value;
-
-      document.querySelectorAll(".tip-button").forEach(function(button) {
-        button.classList.remove("selected");
+      document.querySelectorAll(".tip-button").forEach(function (btn) {
+        btn.classList.remove("selected");
       });
-
       button.classList.add("selected");
     }
 
@@ -129,9 +184,10 @@
       document.getElementById("message").textContent = "";
       document.getElementById("result").textContent = "";
 
-      if (people === 0 || people === "") {
+      if (people < 1 || isNaN(people)) {
         document.getElementById("message").textContent =
           "Please enter at least 1 person";
+        document.getElementById("people-list").innerHTML = "";
         return;
       }
 
@@ -140,8 +196,72 @@
 
       document.getElementById("result").textContent =
         "Each person pays $" + eachPerson.toFixed(2);
+
+      createPeopleList(people);
+    }
+
+    function createPeopleList(number) {
+      const peopleList = document.getElementById("people-list");
+      peopleList.innerHTML = "";
+      personTotals = {};
+
+      for (let i = 1; i <= number; i++) {
+        personTotals[i] = 0;
+
+        const label = document.createElement("label");
+        label.className = "person-checkbox";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = i;
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode("Person " + i));
+
+        peopleList.appendChild(label);
+      }
+    }
+
+    function addItem() {
+      const name = document.getElementById("item-name").value;
+      const price = Number(document.getElementById("item-price").value);
+
+      const selectedPeople = document.querySelectorAll(
+        "#people-list input[type='checkbox']:checked"
+      );
+
+      if (selectedPeople.length === 0) {
+        alert("Please tick at least one person who shared this item.");
+        return;
+      }
+
+      const share = price / selectedPeople.length;
+
+      selectedPeople.forEach(function (person) {
+        personTotals[person.value] += share;
+      });
+
+      const item = document.createElement("div");
+      item.className = "item";
+      item.textContent = name + " — $" + price.toFixed(2);
+
+      document.getElementById("items").appendChild(item);
+
+      showTotals();
+    }
+
+    function showTotals() {
+      const totals = document.getElementById("totals");
+      totals.innerHTML = "<h3>Each Person Owes</h3>";
+
+      for (let person in personTotals) {
+        const line = document.createElement("div");
+        line.className = "person-total";
+        line.textContent =
+          "Person " + person + ": $" + personTotals[person].toFixed(2);
+        totals.appendChild(line);
+      }
     }
   </script>
-
 </body>
 </html>
